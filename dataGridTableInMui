@@ -1,0 +1,246 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Button, TableContainer, Grid, IconButton, Box } from '@mui/material';
+import { makeStyles } from '@mui/styles';
+import { DataGrid } from '@mui/x-data-grid';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import EditIcon from '@mui/icons-material/Edit';
+import { getAllTournaments } from '../../../../services/tournamentService';
+import { getAllPlayerCounters } from '../../../../services/playerCounterServices';
+import { NavItems } from '../NavItems';
+import ViewTableStyles from '../../ViewTableStyles';
+
+const useStyles = makeStyles((theme) => ({
+  tableDataGrid: {
+    overflowY: 'hidden',
+    height: 700,
+  },
+  tableContainer: {
+    height: '100%',
+    width: '100%',
+    border: '1px solid white',
+    boxShadow: '1px 1px 5px black',
+    overflowY: 'hidden',
+    // padding: '10px',
+  },
+  tableSpqHeading: {
+    fontSize: '13px',
+    textAlign: 'center',
+    marginTop: '2px',
+  },
+  headerMainGrid: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  apiDataNotFound: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+}));
+
+export default function BasicEditingGrid() {
+  const columns = [
+    {
+      field: 'id',
+      headerName: 'PC #',
+      headerAlign: 'center',
+      align: 'center',
+    },
+    {
+      field: 'firstName',
+      headerName: 'PC Name',
+      width: 120,
+      headerAlign: 'center',
+      align: 'center',
+      renderCell: (props) => {
+        return `${props.row.firstName} ${props.row.lastName}`;
+      },
+    },
+    {
+      field: 'tokenCode',
+      headerName: 'PC Code',
+      width: 120,
+      headerAlign: 'center',
+      align: 'center',
+    },
+    {
+      field: 'playerRole',
+      headerName: 'Role',
+      width: 100,
+      headerAlign: 'center',
+      align: 'center',
+    },
+    {
+      field: 'tournamentName',
+      headerName: 'Tournament',
+      width: 100,
+      headerAlign: 'center',
+      align: 'center',
+    },
+    {
+      field: 'teamName',
+      headerName: 'Team',
+      width: 100,
+      headerAlign: 'center',
+      align: 'center',
+    },
+    {
+      field: 'totalSupply',
+      headerName: 'Total Supply',
+      width: 100,
+      headerAlign: 'center',
+      align: 'center',
+    },
+    {
+      field: 'status',
+      headerName: 'Status',
+      width: 100,
+      headerAlign: 'center',
+      align: 'center',
+    },
+    {
+      field: 'smartContractAddress',
+      headerName: 'Smart Contract #',
+      width: 150,
+      headerAlign: 'center',
+      align: 'center',
+    },
+    {
+      field: 'delete',
+      headerName: 'Action',
+      width: 150,
+      headerAlign: 'center',
+      align: 'center',
+      renderCell: (props) => {
+        if (props.row.status === 'WIP') {
+          return (
+            <Box style={{ justifyContent: 'space-between' }}>
+              <IconButton
+                style={{ cursor: 'pointer' }}
+                onClick={() => {
+                  navigate(`/dashboard/player-counter/${props.row.id}/edit-player-counter`);
+                }}
+              >
+                <EditIcon color="primary" fontSize="small" style={{ cursor: 'pointer' }} />
+              </IconButton>
+              <IconButton style={{ cursor: 'pointer' }} onClick={() => console.log('hello')}>
+                <DeleteOutlineIcon style={{ cursor: 'pointer', color: 'red' }} />
+              </IconButton>
+            </Box>
+          );
+        }
+        return null;
+      },
+    },
+  ];
+
+  const navigate = useNavigate();
+  const classes = useStyles();
+  const [isLoading, setLoading] = useState(false);
+  const [newData, setNewData] = useState('');
+  const [isError, setError] = useState(false);
+  const [isSuccess, setSuccess] = useState(false);
+  const [alertMsg, setAlertMsg] = useState('');
+  const [value, setValue] = useState(0);
+  const [searchedVal, setSearchedVal] = useState('');
+  const [allTournament, setAllTournament] = useState([]);
+
+  const cardNumber = (para) => {
+    let newString = '';
+    if (para) {
+      for (let i = 0; i < para.length; i += 1) {
+        if (i < 6) {
+          newString += para[i];
+        } else {
+          newString += '*';
+        }
+      }
+      return newString;
+    }
+  };
+
+  const handleCreatePlayer = () => {
+    navigate(`/dashboard/player-counter/player-counter-creation`);
+  };
+
+  const handleEditPc = () => {
+    navigate(`/dashboard/player-counter/edit-player-counter`);
+  };
+
+  const fetchAllPlayers = async () => {
+    setLoading(true);
+    const res = await getAllPlayerCounters();
+
+    if (res.status === 200) {
+      setLoading(false);
+      let data = res?.data;
+      data = data.map((ele) => {
+        if (ele.status === 'WIP') {
+          ele = { ...ele, delete: 'delete' };
+          return ele;
+        }
+        return ele;
+      });
+      console.log('res2', data);
+      setNewData(data);
+    }
+    if (res.code === 'ERR_BAD_REQUEST') {
+      setLoading(false);
+      setError(true);
+      setAlertMsg(res?.response?.data || 'Something went wrong');
+    }
+    if (res.code === 'ERR_NETWORK') {
+      setLoading(false);
+      setError(true);
+      setAlertMsg(res?.message || 'Something went wrong');
+    }
+    setLoading(false);
+  };
+  useEffect(() => {
+    fetchAllPlayers();
+  }, []);
+
+  return (
+    <>
+      <NavItems />
+      {!isError ? (
+        <TableContainer className={classes.tableContainer}>
+          <Grid className={classes.headerMainGrid}>
+            <Grid sx={{ p: 2 }}>
+              &nbsp; &nbsp;<b>Player Counter</b>&nbsp;(
+              <i className={classes.tableSpqHeading}>*prices are in SPQ</i>)
+            </Grid>
+
+            <Grid sx={{ p: 2 }}>
+              <Button variant="contained" color="primary" onClick={handleCreatePlayer} style={{ width: '100%' }}>
+                Create New Player counter
+              </Button>
+            </Grid>
+          </Grid>
+          <hr />
+          <Grid className={classes.tableDataGrid}>
+            <DataGrid
+              rows={newData}
+              columns={columns}
+              sx={{
+                '.MuiDataGrid-columnSeparator': {
+                  display: 'none',
+                },
+                '&.MuiDataGrid-root': {
+                  border: 'none',
+                },
+              }}
+              experimentalFeatures={{ newEditingApi: true }}
+            />
+          </Grid>
+        </TableContainer>
+      ) : (
+        <>
+          <h1 className={classes.apiDataNotFound}>Data is not found.</h1>
+        </>
+      )}
+    </>
+  );
+}

@@ -1,19 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, TableContainer, Grid, IconButton, Box } from '@mui/material';
+import { Button, TableContainer, Paper, Grid, IconButton, Box, Typography, Stack } from '@mui/material';
 import { makeStyles } from '@mui/styles';
 import { DataGrid } from '@mui/x-data-grid';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import SearchIcon from '@mui/icons-material/Search';
 import EditIcon from '@mui/icons-material/Edit';
 import { getAllTournaments } from '../../../../services/tournamentService';
 import { getAllPlayerCounters } from '../../../../services/playerCounterServices';
 import { NavItems } from '../NavItems';
+import Loader from '../../../../components/loader/Loader';
 import ViewTableStyles from '../../ViewTableStyles';
+import { NETWORK_ERROR, BAD_REQUEST, GET_SUCCESS, ERROR_MSG } from '../../../../constant';
 
 const useStyles = makeStyles((theme) => ({
   tableDataGrid: {
-    overflowY: 'hidden',
-    height: 700,
+    height: 600,
+    fontSize: '20px',
   },
   tableContainer: {
     height: '100%',
@@ -21,7 +24,7 @@ const useStyles = makeStyles((theme) => ({
     border: '1px solid white',
     boxShadow: '1px 1px 5px black',
     overflowY: 'hidden',
-    // padding: '10px',
+    padding: '10px 20px',
   },
   tableSpqHeading: {
     fontSize: '13px',
@@ -165,9 +168,14 @@ export default function BasicEditingGrid() {
     navigate(`/dashboard/player-counter/player-counter-creation`);
   };
 
-  const handleEditPc = () => {
-    navigate(`/dashboard/player-counter/edit-player-counter`);
-  };
+  function NoRowsOverlay() {
+    return (
+      <Stack height="100%" alignItems="center" mt={3}>
+        <SearchIcon />
+        <Typography>No data found</Typography>
+      </Stack>
+    );
+  }
 
   const fetchAllPlayers = async () => {
     setLoading(true);
@@ -183,7 +191,6 @@ export default function BasicEditingGrid() {
         }
         return ele;
       });
-      console.log('res2', data);
       setNewData(data);
     }
     if (res.code === 'ERR_BAD_REQUEST') {
@@ -203,7 +210,7 @@ export default function BasicEditingGrid() {
   }, []);
 
   return (
-    <>
+    <Paper>
       <NavItems />
       {!isError ? (
         <TableContainer className={classes.tableContainer}>
@@ -238,9 +245,10 @@ export default function BasicEditingGrid() {
         </TableContainer>
       ) : (
         <>
-          <h1 className={classes.apiDataNotFound}>Data is not found.</h1>
+          <h1 className={classes.apiDataNotFound}>{ERROR_MSG}</h1>
         </>
       )}
-    </>
+      {isLoading && <Loader />}
+    </Paper>
   );
 }

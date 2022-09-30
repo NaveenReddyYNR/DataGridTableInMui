@@ -6,11 +6,10 @@ import { DataGrid } from '@mui/x-data-grid';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import SearchIcon from '@mui/icons-material/Search';
 import EditIcon from '@mui/icons-material/Edit';
-import { getAllTournaments } from '../../../../services/tournamentService';
 import { getAllPlayerCounters } from '../../../../services/playerCounterServices';
 import { NavItems } from '../NavItems';
 import Loader from '../../../../components/loader/Loader';
-import ViewTableStyles from '../../ViewTableStyles';
+import ErrorAlert from '../../../../components/alert/ErrorAlert';
 import { NETWORK_ERROR, BAD_REQUEST, GET_SUCCESS, ERROR_MSG } from '../../../../constant';
 
 const useStyles = makeStyles((theme) => ({
@@ -144,25 +143,7 @@ export default function BasicEditingGrid() {
   const [isLoading, setLoading] = useState(false);
   const [newData, setNewData] = useState('');
   const [isError, setError] = useState(false);
-  const [isSuccess, setSuccess] = useState(false);
   const [alertMsg, setAlertMsg] = useState('');
-  const [value, setValue] = useState(0);
-  const [searchedVal, setSearchedVal] = useState('');
-  const [allTournament, setAllTournament] = useState([]);
-
-  const cardNumber = (para) => {
-    let newString = '';
-    if (para) {
-      for (let i = 0; i < para.length; i += 1) {
-        if (i < 6) {
-          newString += para[i];
-        } else {
-          newString += '*';
-        }
-      }
-      return newString;
-    }
-  };
 
   const handleCreatePlayer = () => {
     navigate(`/dashboard/player-counter/player-counter-creation`);
@@ -181,7 +162,7 @@ export default function BasicEditingGrid() {
     setLoading(true);
     const res = await getAllPlayerCounters();
 
-    if (res.status === 200) {
+    if (res.status === GET_SUCCESS) {
       setLoading(false);
       let data = res?.data;
       data = data.map((ele) => {
@@ -193,15 +174,15 @@ export default function BasicEditingGrid() {
       });
       setNewData(data);
     }
-    if (res.code === 'ERR_BAD_REQUEST') {
+    if (res.code === BAD_REQUEST) {
       setLoading(false);
       setError(true);
-      setAlertMsg(res?.response?.data || 'Something went wrong');
+      setAlertMsg(res?.response?.data || ERROR_MSG);
     }
-    if (res.code === 'ERR_NETWORK') {
+    if (res.code === NETWORK_ERROR) {
       setLoading(false);
       setError(true);
-      setAlertMsg(res?.message || 'Something went wrong');
+      setAlertMsg(res?.message || ERROR_MSG);
     }
     setLoading(false);
   };
@@ -212,42 +193,38 @@ export default function BasicEditingGrid() {
   return (
     <Paper>
       <NavItems />
-      {!isError ? (
-        <TableContainer className={classes.tableContainer}>
-          <Grid className={classes.headerMainGrid}>
-            <Grid sx={{ p: 2 }}>
-              &nbsp; &nbsp;<b>Player Counter</b>&nbsp;(
-              <i className={classes.tableSpqHeading}>*prices are in SPQ</i>)
-            </Grid>
+      <TableContainer className={classes.tableContainer}>
+        <Grid className={classes.headerMainGrid}>
+          <Grid sx={{ p: 2 }}>
+            &nbsp; &nbsp;<b>Player Counter</b>&nbsp;(
+            <i className={classes.tableSpqHeading}>*prices are in SPQ</i>)
+          </Grid>
 
-            <Grid sx={{ p: 2 }}>
-              <Button variant="contained" color="primary" onClick={handleCreatePlayer} style={{ width: '100%' }}>
-                Create New Player counter
-              </Button>
-            </Grid>
+          <Grid sx={{ p: 2 }}>
+            <Button variant="contained" color="primary" onClick={handleCreatePlayer} style={{ width: '100%' }}>
+              Create New Player counter
+            </Button>
           </Grid>
-          <hr />
-          <Grid className={classes.tableDataGrid}>
-            <DataGrid
-              rows={newData}
-              columns={columns}
-              sx={{
-                '.MuiDataGrid-columnSeparator': {
-                  display: 'none',
-                },
-                '&.MuiDataGrid-root': {
-                  border: 'none',
-                },
-              }}
-              experimentalFeatures={{ newEditingApi: true }}
-            />
-          </Grid>
-        </TableContainer>
-      ) : (
-        <>
-          <h1 className={classes.apiDataNotFound}>{ERROR_MSG}</h1>
-        </>
-      )}
+        </Grid>
+        <hr />
+        <Grid className={classes.tableDataGrid}>
+          <DataGrid
+            rows={newData}
+            columns={columns}
+            sx={{
+              '.MuiDataGrid-columnSeparator': {
+                display: 'none',
+              },
+              '&.MuiDataGrid-root': {
+                border: 'none',
+              },
+            }}
+            components={{ NoRowsOverlay }}
+            experimentalFeatures={{ newEditingApi: true }}
+          />
+        </Grid>
+      </TableContainer>
+      <ErrorAlert isError={isError} setError={setError} alertMsg={alertMsg} />
       {isLoading && <Loader />}
     </Paper>
   );
